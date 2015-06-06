@@ -18,6 +18,7 @@ package com.example.android.nsdchat;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
 import android.os.Handler;
@@ -38,7 +39,7 @@ public class NsdChatActivity extends Activity {
     private static Context context;
     private TextView mStatusView;
     private Handler mUpdateHandler;
-    private ArrayAdapter<String> servicesAdapter;
+    public ArrayAdapter<String> servicesAdapter;
 
     public static final String TAG = "NsdChat";
 
@@ -47,7 +48,6 @@ public class NsdChatActivity extends Activity {
     public static Context getContext() {
         return NsdChatActivity.context;
     }
-
 
     /**
      * Called when the activity is first created.
@@ -92,8 +92,10 @@ public class NsdChatActivity extends Activity {
         mNsdHelper.discoverServices();
         servicesAdapter.clear();
         List<String> services = mNsdHelper.getServices();
-        for(String service : services)
+        for (String service : services)
             servicesAdapter.add(service);
+        Intent intent = new Intent(this, DiscoverActivity.class);
+        startActivity(intent);
     }
 
     public void clickConnect(View v) {
@@ -140,8 +142,8 @@ public class NsdChatActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        mNsdHelper.tearDown();
-        mConnection.tearDown();
+//        mNsdHelper.tearDown();
+//        mConnection.tearDown();
         super.onDestroy();
     }
 }

@@ -22,5 +22,9 @@
     <string name="discover">Discover</string>
     <string name="register">Register</string>
     <string name="send">Send</string>
+    <string name="title_activity_discover">DiscoverActivity</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
 
 </resources>
