@@ -24,17 +24,21 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
+
+import java.util.List;
 
 public class NsdChatActivity extends Activity {
 
     NsdHelper mNsdHelper;
 
     private static Context context;
-
     private TextView mStatusView;
     private Handler mUpdateHandler;
+    private ArrayAdapter<String> servicesAdapter;
 
     public static final String TAG = "NsdChat";
 
@@ -45,7 +49,9 @@ public class NsdChatActivity extends Activity {
     }
 
 
-    /** Called when the activity is first created. */
+    /**
+     * Called when the activity is first created.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,7 +60,7 @@ public class NsdChatActivity extends Activity {
         mStatusView = (TextView) findViewById(R.id.status);
 
         mUpdateHandler = new Handler() {
-                @Override
+            @Override
             public void handleMessage(Message msg) {
                 String chatLine = msg.getData().getString("msg");
                 addChatLine(chatLine);
@@ -66,11 +72,16 @@ public class NsdChatActivity extends Activity {
         mNsdHelper = new NsdHelper(this);
         mNsdHelper.initializeNsd();
 
+        //Creating list of services
+        servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mNsdHelper.getServices());
+        ListView serviceList = (ListView) findViewById(R.id.serviceList);
+        serviceList.setAdapter(servicesAdapter);
+
     }
 
     public void clickAdvertise(View v) {
         // Register service
-        if(mConnection.getLocalPort() > -1) {
+        if (mConnection.getLocalPort() > -1) {
             mNsdHelper.registerService(mConnection.getLocalPort());
         } else {
             Log.d(TAG, "ServerSocket isn't bound.");
@@ -79,6 +90,10 @@ public class NsdChatActivity extends Activity {
 
     public void clickDiscover(View v) {
         mNsdHelper.discoverServices();
+        servicesAdapter.clear();
+        List<String> services = mNsdHelper.getServices();
+        for(String service : services)
+            servicesAdapter.add(service);
     }
 
     public void clickConnect(View v) {
@@ -114,7 +129,7 @@ public class NsdChatActivity extends Activity {
 //        }
         super.onPause();
     }
-    
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -122,7 +137,7 @@ public class NsdChatActivity extends Activity {
 //            mNsdHelper.discoverServices();
 //        }
     }
-    
+
     @Override
     protected void onDestroy() {
         mNsdHelper.tearDown();

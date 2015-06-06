@@ -46,12 +46,16 @@
             android:onClick="clickConnect"
             android:text="@string/connect" />
     </LinearLayout>
-
     <TextView
         android:id="@+id/status"
         android:layout_width="fill_parent"
-        android:layout_height="200dp"
+        android:layout_height="100dp"
         android:focusable="true" />
+
+    <ListView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/serviceList"></ListView>
 
     <EditText
         android:id="@+id/chatInput"
