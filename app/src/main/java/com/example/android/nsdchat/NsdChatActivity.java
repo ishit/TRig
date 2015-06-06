@@ -73,9 +73,9 @@ public class NsdChatActivity extends Activity {
         mNsdHelper.initializeNsd();
 
         //Creating list of services
-        servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mNsdHelper.getServices());
-        ListView serviceList = (ListView) findViewById(R.id.serviceList);
-        serviceList.setAdapter(servicesAdapter);
+        //servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mNsdHelper.getServices());
+        //ListView serviceList = (ListView) findViewById(R.id.serviceList);
+        //serviceList.setAdapter(servicesAdapter);
 
     }
 
@@ -88,14 +88,26 @@ public class NsdChatActivity extends Activity {
         }
     }
 
-    public void clickDiscover(View v) {
+    public void clickDiscover(View v) throws InterruptedException {
         mNsdHelper.discoverServices();
-        servicesAdapter.clear();
-        List<String> services = mNsdHelper.getServices();
-        for (String service : services)
-            servicesAdapter.add(service);
-        Intent intent = new Intent(this, DiscoverActivity.class);
-        startActivity(intent);
+
+        //Delayed by 1s to get the updated list(only happens when discover services is called first time)
+        new Handler().postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                List<String> services = mNsdHelper.getServices();
+
+                String[] servicesArray = new String[services.size()];
+                servicesArray = services.toArray(servicesArray);
+
+                Intent intent = new Intent(NsdChatActivity.this, DiscoverActivity.class);
+                intent.putExtra("servicesArray", servicesArray);
+                startActivity(intent);
+            }
+        }, 1000);
+
+
     }
 
     public void clickConnect(View v) {
@@ -142,8 +154,8 @@ public class NsdChatActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-//        mNsdHelper.tearDown();
-//        mConnection.tearDown();
+        //mNsdHelper.tearDown();  //close all services when app closed
+        //mConnection.tearDown();
         super.onDestroy();
     }
 }
