@@ -69,11 +69,6 @@ public class NsdChatActivity extends Activity {
         mNsdHelper = new NsdHelper(this);
         mNsdHelper.initializeNsd();
 
-        //Creating list of services
-        //servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mNsdHelper.getServices());
-        //ListView serviceList = (ListView) findViewById(R.id.serviceList);
-        //serviceList.setAdapter(servicesAdapter);
-
     }
 
     public void clickAdvertise(View v) {
@@ -87,16 +82,8 @@ public class NsdChatActivity extends Activity {
 
     public void clickDiscover(View v) throws InterruptedException {
         mNsdHelper.discoverServices();
-
-        new Handler().postDelayed(new Runnable() {
-
-            @Override
-            public void run() {
-                Intent intent = new Intent(NsdChatActivity.this, DiscoverActivity.class);
-                startActivity(intent);
-            }
-        }, 1000);
-
+        Intent intent = new Intent(NsdChatActivity.this, DiscoverActivity.class);
+        startActivity(intent);
 
     }
 

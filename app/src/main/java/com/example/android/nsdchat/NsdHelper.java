@@ -57,6 +57,7 @@ public class NsdHelper {
             @Override
             public void onServiceFound(NsdServiceInfo service) {
                 Log.d(TAG, "Service discovery success :" + service.getServiceName());
+                if (!services.getServices().contains(service.getServiceName()))
                 services.addService(service.getServiceName());
                 if (!service.getServiceType().equals(SERVICE_TYPE)) {
                     Log.d(TAG, "Unknown Service Type: " + service.getServiceType());
@@ -162,7 +163,7 @@ public class NsdHelper {
         //Start a new listener only if it has not been started previously.
         if(mDiscoveryListener==null) {
             //initializeResolveListener(); //not needed here anymore as not being used in DiscoveryListener. Need to use it when resolving a service.
-            initializeDiscoveryListener();
+            initializeDiscoveryListener();    //TODO : Discovers services multiple number of times on clicking discover multiple number of times
 
             mNsdManager.discoverServices(
                     SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
