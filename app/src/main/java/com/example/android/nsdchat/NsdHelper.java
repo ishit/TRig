@@ -161,7 +161,7 @@ public class NsdHelper {
 
         //Start a new listener only if it has not been started previously.
         if(mDiscoveryListener==null) {
-            //initializeResolveListener();  //not needed here anymore as not being used in DiscoveryListener. Need to use it when resolving a service.
+            //initializeResolveListener(); //not needed here anymore as not being used in DiscoveryListener. Need to use it when resolving a service.
             initializeDiscoveryListener();
 
             mNsdManager.discoverServices(
