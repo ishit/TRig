@@ -6,7 +6,6 @@ import android.net.nsd.NsdServiceInfo;
 import android.util.Log;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -20,7 +19,8 @@ public class NsdHelper {
     NsdManager.RegistrationListener mRegistrationListener;
 
     public static final String SERVICE_TYPE = "_http._tcp.";
-    private List<String> services;
+    //    private List<String> services;
+    ServicesList services = ServicesList.getInstance();
 
     public static final String TAG = "NsdHelper";
     public String mServiceName = "NsdChat"+new Random().nextInt(50) + 1;
@@ -33,7 +33,7 @@ public class NsdHelper {
     }
 
     public void initializeNsd() {
-        services = new ArrayList<String>();
+//        services = new ArrayList<String>();
 //        initializeResolveListener();
 //        initializeDiscoveryListener();
 //        initializeRegistrationListener();
@@ -43,7 +43,7 @@ public class NsdHelper {
     }
 
     public List<String> getServices(){
-        return services;
+        return services.getServices();
     }
 
     public void initializeDiscoveryListener() {
@@ -57,7 +57,7 @@ public class NsdHelper {
             @Override
             public void onServiceFound(NsdServiceInfo service) {
                 Log.d(TAG, "Service discovery success :" + service.getServiceName());
-                services.add(service.getServiceName());
+                services.addService(service.getServiceName());
                 if (!service.getServiceType().equals(SERVICE_TYPE)) {
                     Log.d(TAG, "Unknown Service Type: " + service.getServiceType());
                 } else if (service.getServiceName().equals(mServiceName)) {

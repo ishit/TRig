@@ -27,10 +27,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.TextView;
-
-import java.util.List;
 
 public class NsdChatActivity extends Activity {
 
@@ -91,18 +88,11 @@ public class NsdChatActivity extends Activity {
     public void clickDiscover(View v) throws InterruptedException {
         mNsdHelper.discoverServices();
 
-        //Delayed by 1s to get the updated list(only happens when discover services is called first time)
         new Handler().postDelayed(new Runnable() {
 
             @Override
             public void run() {
-                List<String> services = mNsdHelper.getServices();
-
-                String[] servicesArray = new String[services.size()];
-                servicesArray = services.toArray(servicesArray);
-
                 Intent intent = new Intent(NsdChatActivity.this, DiscoverActivity.class);
-                intent.putExtra("servicesArray", servicesArray);
                 startActivity(intent);
             }
         }, 1000);

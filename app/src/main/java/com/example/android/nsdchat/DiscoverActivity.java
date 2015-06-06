@@ -1,33 +1,30 @@
 package com.example.android.nsdchat;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.util.List;
+
 
 public class DiscoverActivity extends Activity {
 
     private ArrayAdapter<String> servicesAdapter;
-//    NsdHelper mNsdHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_discover);
 
-        Intent i = getIntent();
-        String[] servicesArray = i.getStringArrayExtra("servicesArray");
+        List<String> services = ServicesList.getInstance().getServices();
+        String[] servicesArray = new String[services.size()];
+        servicesArray = services.toArray(servicesArray);
         servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, servicesArray);
-
         ListView serviceList = (ListView) findViewById(R.id.serviceList);
         serviceList.setAdapter(servicesAdapter);
-
-        //Log.d("disvoveraoity", servicesArray[0]);
 
     }
 
