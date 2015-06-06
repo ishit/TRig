@@ -63,7 +63,7 @@ public class NsdHelper {
                 } else if (service.getServiceName().equals(mServiceName)) {
                     Log.d(TAG, "Same machine: " + mServiceName);
                 } else if (service.getServiceName().contains("NsdChat")){
-                    mNsdManager.resolveService(service, mResolveListener);
+                    //mNsdManager.resolveService(service, mResolveListener); //only need to resolve when service selected by users
                 }
             }
 
@@ -159,11 +159,14 @@ public class NsdHelper {
 
     public void discoverServices() {
 
-        initializeResolveListener();
-        initializeDiscoveryListener();
+        //Start a new listener only if it has not been started previously.
+        if(mDiscoveryListener==null) {
+            //initializeResolveListener();  //not needed here anymore as not being used in DiscoveryListener. Need to use it when resolving a service.
+            initializeDiscoveryListener();
 
-        mNsdManager.discoverServices(
-                SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
+            mNsdManager.discoverServices(
+                    SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
+        }
     }
 
     public void stopDiscovery() {
