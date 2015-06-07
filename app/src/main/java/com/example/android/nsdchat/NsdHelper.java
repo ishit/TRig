@@ -165,6 +165,7 @@ public class NsdHelper {
             //initializeResolveListener(); //not needed here anymore as not being used in DiscoveryListener. Need to use it when resolving a service.
             initializeDiscoveryListener();    //TODO : Discovers services multiple number of times on clicking discover multiple number of times
 
+            Log.d(TAG,"DiscoveryListener initialised");
             mNsdManager.discoverServices(
                     SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
         }
