@@ -37,11 +37,6 @@
         android:layout_height="100dp"
         android:focusable="true" />
 
-    <ListView
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:id="@+id/serviceList"></ListView>
-
     <EditText
         android:id="@+id/chatInput"
         android:layout_width="fill_parent"

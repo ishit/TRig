@@ -1,7 +1,7 @@
 package com.example.android.nsdchat;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -9,25 +9,27 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class DiscoverActivity extends Activity {
 
     private ArrayAdapter<String> servicesAdapter;
-//    NsdHelper mNsdHelper;
+    private final String LOG_TAG = "DiscoverActivity";
+    private List<String> services;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_discover);
 
-        Intent i = getIntent();
-        String[] servicesArray = i.getStringArrayExtra("servicesArray");
-        servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, servicesArray);
+        new RefreshList().execute();
 
-        ListView serviceList = (ListView) findViewById(R.id.serviceList);
+        services = new ArrayList<String>();
+        servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, services);
+        final ListView serviceList = (ListView) findViewById(R.id.serviceList);
         serviceList.setAdapter(servicesAdapter);
-
-        //Log.d("disvoveraoity", servicesArray[0]);
 
     }
 
@@ -52,4 +54,30 @@ public class DiscoverActivity extends Activity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    private class RefreshList extends AsyncTask<Void, Void, List<String>> {
+
+        @Override
+        protected  List<String> doInBackground(Void... voids) {
+//            try {
+//                Thread.sleep(1000);                 //1000 milliseconds is one second.
+//            } catch (InterruptedException ex) {
+//                Thread.currentThread().interrupt();
+//            }
+            Log.e(LOG_TAG, "Size " + NsdHelper.getInstance(getApplicationContext()).getServices().size());
+
+            return NsdHelper.getInstance(getApplicationContext()).getServices();
+        }
+
+        @Override
+        protected void onPostExecute(List<String> servicesList) {
+            if (services != null) {
+                services.clear();
+                services.addAll(servicesList);
+                servicesAdapter.notifyDataSetChanged();
+                Log.d(LOG_TAG,"List Changed");
+            }
+        }
+    }
+
 }

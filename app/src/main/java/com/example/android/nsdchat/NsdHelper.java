@@ -14,36 +14,45 @@ public class NsdHelper {
 
     Context mContext;
 
-    NsdManager mNsdManager;
-    NsdManager.ResolveListener mResolveListener;
-    NsdManager.DiscoveryListener mDiscoveryListener;
-    NsdManager.RegistrationListener mRegistrationListener;
+    private static NsdHelper mNsdHelper;
+    private NsdManager mNsdManager;
+    private NsdManager.ResolveListener mResolveListener;
+    private NsdManager.DiscoveryListener mDiscoveryListener;
+    private NsdManager.RegistrationListener mRegistrationListener;
 
     public static final String SERVICE_TYPE = "_http._tcp.";
-    private List<String> services;
+    private List<String> servicesList = new ArrayList<String>();
 
     public static final String TAG = "NsdHelper";
     public String mServiceName = "NsdChat"+new Random().nextInt(50) + 1;
 
-    NsdServiceInfo mService;
+    private NsdServiceInfo mService;
 
-    public NsdHelper(Context context) {
+    private NsdHelper(Context context) {
         mContext = context;
         mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
     }
 
-    public void initializeNsd() {
-        services = new ArrayList<String>();
+    public static NsdHelper getInstance(Context context){
+        if(mNsdHelper==null){
+            mNsdHelper = new NsdHelper(context);
+        }
+
+        return mNsdHelper;
+    }
+
+//    public void initializeNsd() {
+//        services = new ArrayList<String>();
 //        initializeResolveListener();
 //        initializeDiscoveryListener();
 //        initializeRegistrationListener();
-
-        //mNsdManager.init(mContext.getMainLooper(), this);
-
-    }
+//
+//        mNsdManager.init(mContext.getMainLooper(), this);
+//
+//    }
 
     public List<String> getServices(){
-        return services;
+        return servicesList;
     }
 
     public void initializeDiscoveryListener() {
@@ -57,7 +66,10 @@ public class NsdHelper {
             @Override
             public void onServiceFound(NsdServiceInfo service) {
                 Log.d(TAG, "Service discovery success :" + service.getServiceName());
-                services.add(service.getServiceName());
+
+                if (!servicesList.contains(service.getServiceName()))
+                    servicesList.add(service.getServiceName());
+
                 if (!service.getServiceType().equals(SERVICE_TYPE)) {
                     Log.d(TAG, "Unknown Service Type: " + service.getServiceType());
                 } else if (service.getServiceName().equals(mServiceName)) {
@@ -73,6 +85,9 @@ public class NsdHelper {
                 if (mService == service) {
                     mService = null;
                 }
+                //remove the old lost services
+                if(servicesList.contains(service.getServiceName()))
+                    servicesList.remove(service.getServiceName());
             }
 
             @Override
@@ -133,6 +148,7 @@ public class NsdHelper {
 
             @Override
             public void onServiceUnregistered(NsdServiceInfo arg0) {
+                Log.d(TAG, "Service Unregistered: "+arg0.getServiceName());
             }
 
             @Override
@@ -150,6 +166,10 @@ public class NsdHelper {
         serviceInfo.setServiceName(mServiceName);
         serviceInfo.setServiceType(SERVICE_TYPE);
 
+        //unregister the old registered service before initiating new one.
+        if(mRegistrationListener!=null)
+            tearDown();
+
         initializeRegistrationListener();
 
         mNsdManager.registerService(
@@ -162,8 +182,9 @@ public class NsdHelper {
         //Start a new listener only if it has not been started previously.
         if(mDiscoveryListener==null) {
             //initializeResolveListener(); //not needed here anymore as not being used in DiscoveryListener. Need to use it when resolving a service.
-            initializeDiscoveryListener();
+            initializeDiscoveryListener();    //TODO : Discovers services multiple number of times on clicking discover multiple number of times
 
+            Log.d(TAG,"DiscoveryListener initialised");
             mNsdManager.discoverServices(
                     SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
         }
