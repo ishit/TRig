@@ -87,7 +87,7 @@ public class NsdChatActivity extends Activity {
 
     }
 
-    public void clickConnect(View v) {
+    public void Connect() {
         NsdServiceInfo service = mNsdHelper.getChosenServiceInfo();
         if (service != null) {
             Log.d(TAG, "Connecting.");
@@ -124,6 +124,9 @@ public class NsdChatActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        Intent intent = getIntent();
+        if (intent.getStringExtra("selected") != null)
+            Connect();
 //        if (mNsdHelper != null) {
 //            mNsdHelper.discoverServices();
 //        }
