@@ -22,7 +22,6 @@ public class NsdHelper {
 
     public static final String SERVICE_TYPE = "_http._tcp.";
     private List<String> servicesList = new ArrayList<String>();
-//    private ServicesList services = ServicesList.getInstance();
 
     public static final String TAG = "NsdHelper";
     public String mServiceName = "NsdChat"+new Random().nextInt(50) + 1;
