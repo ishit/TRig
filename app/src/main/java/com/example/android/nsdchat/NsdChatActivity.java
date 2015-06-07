@@ -66,8 +66,8 @@ public class NsdChatActivity extends Activity {
 
         mConnection = new ChatConnection(mUpdateHandler);
 
-        mNsdHelper = new NsdHelper(this);
-        mNsdHelper.initializeNsd();
+        mNsdHelper = NsdHelper.getInstance(this);
+//        mNsdHelper.initializeNsd();
 
     }
 
@@ -131,8 +131,8 @@ public class NsdChatActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        //mNsdHelper.tearDown();  //close all services when app closed
-        //mConnection.tearDown();
+//        mNsdHelper.tearDown();  //close all services when app closed
+//        mConnection.tearDown();
         super.onDestroy();
     }
 }
