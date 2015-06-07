@@ -10,7 +10,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -18,6 +17,7 @@ public class DiscoverActivity extends Activity {
 
     private ArrayAdapter<String> servicesAdapter;
     private final String LOG_TAG = "DiscoverActivity";
+    private List<String> services;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,8 +25,8 @@ public class DiscoverActivity extends Activity {
         setContentView(R.layout.activity_discover);
 
         new RefreshList().execute();
-        String[] servicesArray = {};
-        List<String> services = new ArrayList<String>(Arrays.asList(servicesArray));
+
+        services = new ArrayList<String>();
         servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, services);
         final ListView serviceList = (ListView) findViewById(R.id.serviceList);
         serviceList.setAdapter(servicesAdapter);
@@ -55,27 +55,27 @@ public class DiscoverActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class RefreshList extends AsyncTask<Void, Void, String[]> {
+    private class RefreshList extends AsyncTask<Void, Void, List<String>> {
 
         @Override
-        protected String[] doInBackground(Void... voids) {
+        protected  List<String> doInBackground(Void... voids) {
 //            try {
 //                Thread.sleep(1000);                 //1000 milliseconds is one second.
 //            } catch (InterruptedException ex) {
 //                Thread.currentThread().interrupt();
 //            }
-            String[] servicesArray = new String[ServicesList.getInstance().getServices().size()];
-            Log.e(LOG_TAG, "Size " + servicesArray.length);
-            servicesArray = ServicesList.getInstance().getServices().toArray(servicesArray);
-            return servicesArray;
+            Log.e(LOG_TAG, "Size " + ServicesList.getInstance().getServices().size());
+
+            return ServicesList.getInstance().getServices();
         }
 
         @Override
-        protected void onPostExecute(String[] services) {
+        protected void onPostExecute(List<String> servicesList) {
             if (services != null) {
-                servicesAdapter.clear();
-                for (String service : services)
-                    servicesAdapter.add(service);
+                services.clear();
+                services.addAll(servicesList);
+                servicesAdapter.notifyDataSetChanged();
+                Log.d(LOG_TAG,"List Changed");
             }
         }
     }
