@@ -64,9 +64,9 @@ public class DiscoverActivity extends Activity {
 //            } catch (InterruptedException ex) {
 //                Thread.currentThread().interrupt();
 //            }
-            Log.e(LOG_TAG, "Size " + ServicesList.getInstance().getServices().size());
+            Log.e(LOG_TAG, "Size " + NsdHelper.getInstance(getApplicationContext()).getServices().size());
 
-            return ServicesList.getInstance().getServices();
+            return NsdHelper.getInstance(getApplicationContext()).getServices();
         }
 
         @Override
@@ -79,7 +79,5 @@ public class DiscoverActivity extends Activity {
             }
         }
     }
-
-    ;
 
 }
