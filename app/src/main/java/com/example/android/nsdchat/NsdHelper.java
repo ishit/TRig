@@ -123,7 +123,7 @@ public class NsdHelper {
 
             @Override
             public void onServiceResolved(NsdServiceInfo serviceInfo) {
-                Log.e(TAG, "Resolve Succeeded. " + serviceInfo);
+                Log.e(TAG, "Resolve Succeeded. " + serviceInfo + " " + serviceInfo.getHost() + "/" + serviceInfo.getPort());
 
                 if (serviceInfo.getServiceName().equals(mServiceName)) {
                     Log.d(TAG, "Same IP.");
@@ -140,7 +140,7 @@ public class NsdHelper {
             @Override
             public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
                 mServiceName = NsdServiceInfo.getServiceName();
-                Log.d(TAG, "Registered: " + mServiceName);
+                Log.d(TAG, "Registered: " + mServiceName + " " + NsdServiceInfo.getHost() + "/" + NsdServiceInfo.getPort());
                 Toast toast = Toast.makeText(NsdChatActivity.getContext(), "Registered as " + mServiceName, Toast.LENGTH_LONG);
                 toast.show();
             }
@@ -195,7 +195,8 @@ public class NsdHelper {
     }
 
     public void stopDiscovery() {
-        mNsdManager.stopServiceDiscovery(mDiscoveryListener);
+        if (mDiscoveryListener != null)
+            mNsdManager.stopServiceDiscovery(mDiscoveryListener);
     }
 
     public NsdServiceInfo getChosenServiceInfo() {
@@ -203,6 +204,12 @@ public class NsdHelper {
     }
 
     public void tearDown() {
-        mNsdManager.unregisterService(mRegistrationListener);
+        stopDiscovery();
+        mDiscoveryListener = null;
+        if (mRegistrationListener != null)
+            mNsdManager.unregisterService(mRegistrationListener);
+        mRegistrationListener = null;
+
+
     }
 }
