@@ -264,7 +264,7 @@ public class ChatConnection {
             public void run() {
                 Log.d(CLIENT_TAG, "Client-side sending thread initialised");
                 try {
-                    if (getSocket() == null || getSocket().getPort() != mPort) {
+                    if (getSocket() == null) {
                         Log.d(CLIENT_TAG, "Client-side socket creating: " + mAddress + "/" + mPort);
                         //getSocket().close();
                         setSocket(new Socket(mAddress, PORT));
