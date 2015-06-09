@@ -44,26 +44,42 @@ public class ChatConnection {
 
     private Socket mSocket;
     private int mPort = -1;
+    //private Thread mRecThread;
 
     public ChatConnection(Handler handler) {
         mUpdateHandler = handler;
         mChatServer = new ChatServer(handler);
-
     }
 
+//    public void startChatServer(){
+//        if(mChatServer!=null)
+//            mChatServer.tearDown();
+//        mChatServer = new ChatServer(mUpdateHandler);
+//    }
+
     public void tearDown() {
-        mChatServer.tearDown();
-        mChatClient.tearDown();
+        if (mChatServer != null)
+            mChatServer.tearDown();
+        if (mChatClient != null)
+            mChatClient.tearDown();
+
     }
 
     public void connectToServer(InetAddress address, int port) {
+        if (mChatClient != null)
+            mChatClient.tearDown();
         mChatClient = new ChatClient(address, port);
     }
 
     public void sendMessage(String msg) {
         if (mChatClient != null) {
-            mChatClient.sendMessage(msg);
-        }
+            try {
+                mChatClient.getmMessageQueue().put(msg);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } else
+            Log.e(TAG, "Chat Client not initialised");
     }
     
     public int getLocalPort() {
@@ -127,8 +143,11 @@ public class ChatConnection {
 
         public void tearDown() {
             mThread.interrupt();
+
+            Log.d(TAG, "Closing server socket.");
             try {
-                mServerSocket.close();
+                if (mServerSocket != null)
+                    mServerSocket.close();
             } catch (IOException ioe) {
                 Log.e(TAG, "Error when closing server socket.");
             }
@@ -141,21 +160,22 @@ public class ChatConnection {
 
                 try {
                     // Since discovery will happen via Nsd, we don't need to care which port is
-                    // used.  Just grab an available one  and advertise it via Nsd.
+                    // used.  Just grab an available one  and advertised it via Nsd.
                     mServerSocket = new ServerSocket(0);
                     setLocalPort(mServerSocket.getLocalPort());
                     
                     while (!Thread.currentThread().isInterrupted()) {
                         Log.d(TAG, "ServerSocket Created, awaiting connection");
-                        setSocket(mServerSocket.accept());
+                        Socket socket = mServerSocket.accept();
+                        Log.d(TAG, "ServerSocket accepted client");
+                        setSocket(socket);
                         Log.d(TAG, "Connected.");
-//                        Toast toast = Toast.makeText(new NsdChatActivity().getApplicationContext(), "Connected!", Toast.LENGTH_SHORT);
+//                        Toast toast = Toast.makeText(null, "Connected!", Toast.LENGTH_SHORT);
 //                        toast.show();
-                        if (mChatClient == null) {
-                            int port = mSocket.getPort();
-                            InetAddress address = mSocket.getInetAddress();
-                            connectToServer(address, port);
-                        }
+
+
+                        connectToServer(socket.getInetAddress(), socket.getPort());
+
                     }
                 } catch (IOException e) {
                     Log.e(TAG, "Error creating ServerSocket: ", e);
@@ -169,11 +189,15 @@ public class ChatConnection {
 
         private InetAddress mAddress;
         private int PORT;
+        PrintWriter out;
+        BufferedReader input;
 
+        //private Socket clientSocket;
         private final String CLIENT_TAG = "ChatClient";
 
         private Thread mSendThread;
         private Thread mRecThread;
+        BlockingQueue<String> mMessageQueue;
 
         public ChatClient(InetAddress address, int port) {
 
@@ -183,21 +207,66 @@ public class ChatConnection {
 
             mSendThread = new Thread(new SendingThread());
             mSendThread.start();
+
+            mRecThread = new Thread(new ReceivingThread());
+            mRecThread.start();
+        }
+
+        public BlockingQueue<String> getmMessageQueue() {
+            return mMessageQueue;
+        }
+
+        class ReceivingThread implements Runnable {
+
+            @Override
+            public void run() {
+                Log.d(TAG, "Receiving thread initialised");
+
+                while (getSocket() == null) ;
+
+                BufferedReader input;
+                try {
+                    input = new BufferedReader(new InputStreamReader(
+                            getSocket().getInputStream()));
+                    while (!Thread.currentThread().isInterrupted()) {
+
+                        String messageStr;
+                        messageStr = input.readLine();
+                        if (messageStr != null) {
+                            Log.d(TAG, "Read from the stream: " + messageStr + " -- " + getSocket().toString());
+                            updateMessages(messageStr, false);
+                        }
+//                      else {
+//                            Log.d(TAG, "The nulls! The nulls!");
+//                            break;
+//                        }
+                    }
+
+
+                } catch (IOException e) {
+                    Log.e(TAG, "error: ", e);
+                }
+
+            }
         }
 
         class SendingThread implements Runnable {
 
-            BlockingQueue<String> mMessageQueue;
+
             private int QUEUE_CAPACITY = 10;
 
             public SendingThread() {
                 mMessageQueue = new ArrayBlockingQueue<String>(QUEUE_CAPACITY);
             }
 
+
             @Override
             public void run() {
+                Log.d(CLIENT_TAG, "Client-side sending thread initialised");
                 try {
-                    if (getSocket() == null) {
+                    if (getSocket() == null || getSocket().getPort() != mPort) {
+                        Log.d(CLIENT_TAG, "Client-side socket creating: " + mAddress + "/" + mPort);
+                        //getSocket().close();
                         setSocket(new Socket(mAddress, PORT));
                         Log.d(CLIENT_TAG, "Client-side socket initialized.");
 
@@ -205,8 +274,9 @@ public class ChatConnection {
                         Log.d(CLIENT_TAG, "Socket already initialized. skipping!");
                     }
 
-                    mRecThread = new Thread(new ReceivingThread());
-                    mRecThread.start();
+                    out = new PrintWriter(
+                            new BufferedWriter(
+                                    new OutputStreamWriter(getSocket().getOutputStream())), true);
 
                 } catch (UnknownHostException e) {
                     Log.d(CLIENT_TAG, "Initializing socket failed, UHE", e);
@@ -214,7 +284,7 @@ public class ChatConnection {
                     Log.d(CLIENT_TAG, "Initializing socket failed, IOE.", e);
                 }
 
-                while (true) {
+                while (!Thread.currentThread().isInterrupted()) {
                     try {
                         String msg = mMessageQueue.take();
                         sendMessage(msg);
@@ -225,66 +295,46 @@ public class ChatConnection {
             }
         }
 
-        class ReceivingThread implements Runnable {
 
-            @Override
-            public void run() {
-
-                BufferedReader input;
-                try {
-                    input = new BufferedReader(new InputStreamReader(
-                            mSocket.getInputStream()));
-                    while (!Thread.currentThread().isInterrupted()) {
-
-                        String messageStr = null;
-                        messageStr = input.readLine();
-                        if (messageStr != null) {
-                            Log.d(CLIENT_TAG, "Read from the stream: " + messageStr);
-                            updateMessages(messageStr, false);
-                        } else {
-                            Log.d(CLIENT_TAG, "The nulls! The nulls!");
-                            break;
-                        }
-                    }
-                    input.close();
-
-                } catch (IOException e) {
-                    Log.e(CLIENT_TAG, "Server loop error: ", e);
-                }
-            }
-        }
 
         public void tearDown() {
+            mSendThread.interrupt();
+            mRecThread.interrupt();
+            Log.d(CLIENT_TAG, "Closing client socket.");
             try {
-                getSocket().close();
+                input.close();
+                out.close();
+                if (getSocket() != null)
+                    getSocket().close();
             } catch (IOException ioe) {
-                Log.e(CLIENT_TAG, "Error when closing server socket.");
+                Log.e(CLIENT_TAG, "Error when closing client socket.");
             }
+            Log.d(CLIENT_TAG, "Closed client socket.");
         }
 
         public void sendMessage(String msg) {
             try {
-                Socket socket = getSocket();
-                if (socket == null) {
+                if (getSocket() == null) {
                     Log.d(CLIENT_TAG, "Socket is null, wtf?");
-                } else if (socket.getOutputStream() == null) {
+                } else if (out == null) {
                     Log.d(CLIENT_TAG, "Socket output stream is null, wtf?");
+                } else {
+                    out.println(msg);
+                    out.flush();
+                    updateMessages(msg, true);
+                    Log.d(CLIENT_TAG, "Sent message: " + msg);
                 }
-
-                PrintWriter out = new PrintWriter(
-                        new BufferedWriter(
-                                new OutputStreamWriter(getSocket().getOutputStream())), true);
-                out.println(msg);
-                out.flush();
-                updateMessages(msg, true);
-            } catch (UnknownHostException e) {
-                Log.d(CLIENT_TAG, "Unknown Host", e);
-            } catch (IOException e) {
-                Log.d(CLIENT_TAG, "I/O Exception", e);
+//            } catch (UnknownHostException e) {
+//                Log.d(CLIENT_TAG, "Unknown Host", e);
+//            } catch (IOException e) {
+//                Log.d(CLIENT_TAG, "I/O Exception", e);
+//            }
             } catch (Exception e) {
-                Log.d(CLIENT_TAG, "Error3", e);
+                Log.d(CLIENT_TAG, "Error", e);
             }
-            Log.d(CLIENT_TAG, "Client sent message: " + msg);
+
         }
     }
+
+
 }
