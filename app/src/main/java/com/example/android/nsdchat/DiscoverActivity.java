@@ -1,11 +1,15 @@
 package com.example.android.nsdchat;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.nsd.NsdServiceInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -30,6 +34,26 @@ public class DiscoverActivity extends Activity {
         servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, services);
         final ListView serviceList = (ListView) findViewById(R.id.serviceList);
         serviceList.setAdapter(servicesAdapter);
+
+        //Item listener
+        serviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                String selectedItem = (String) serviceList.getItemAtPosition(position);
+                NsdHelper mNsdHelper = NsdHelper.getInstance(getApplicationContext());
+                for (NsdServiceInfo service : mNsdHelper.getServiceInfoList()) {
+                    if (service.getServiceName() == selectedItem) {
+                        mNsdHelper.setChosenServiceInfo(service);
+                        break;
+                    }
+                }
+                Log.d(LOG_TAG, "Resolved Service: " + mNsdHelper.getChosenServiceInfo());
+                Intent intent = new Intent(DiscoverActivity.this, NsdChatActivity.class);
+                intent.putExtra("selected", selectedItem);
+                startActivity(intent);
+            }
+        });
 
     }
 
@@ -58,7 +82,7 @@ public class DiscoverActivity extends Activity {
     private class RefreshList extends AsyncTask<Void, Void, List<String>> {
 
         @Override
-        protected  List<String> doInBackground(Void... voids) {
+        protected List<String> doInBackground(Void... voids) {
 //            try {
 //                Thread.sleep(1000);                 //1000 milliseconds is one second.
 //            } catch (InterruptedException ex) {
@@ -75,7 +99,7 @@ public class DiscoverActivity extends Activity {
                 services.clear();
                 services.addAll(servicesList);
                 servicesAdapter.notifyDataSetChanged();
-                Log.d(LOG_TAG,"List Changed");
+                Log.d(LOG_TAG, "List Changed");
             }
         }
     }
