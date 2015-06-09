@@ -25,7 +25,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -36,7 +35,6 @@ public class NsdChatActivity extends Activity {
     private static Context context;
     private TextView mStatusView;
     private Handler mUpdateHandler;
-    public ArrayAdapter<String> servicesAdapter;
 
     public static final String TAG = "NsdChat";
 
@@ -52,6 +50,7 @@ public class NsdChatActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "On Create");
         NsdChatActivity.context = getApplicationContext();
         setContentView(R.layout.main);
         mStatusView = (TextView) findViewById(R.id.status);
@@ -73,6 +72,7 @@ public class NsdChatActivity extends Activity {
 
     public void clickAdvertise(View v) {
         // Register service
+//        mConnection.startChatServer();
         if (mConnection.getLocalPort() > -1) {
             mNsdHelper.registerService(mConnection.getLocalPort());
         } else {
@@ -109,12 +109,21 @@ public class NsdChatActivity extends Activity {
         }
     }
 
-    public void addChatLine(String line) {
-        mStatusView.append("\n" + line);
+    public void addChatLine(final String line) {
+        Log.d(TAG, "Added Chat Line:" + line);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mStatusView.append("\n" + line);
+            }
+        });
+
+
     }
 
     @Override
     protected void onPause() {
+        Log.d(TAG, "On Pause");
 //        if (mNsdHelper != null) {
 //            mNsdHelper.stopDiscovery();
 //        }
@@ -122,8 +131,18 @@ public class NsdChatActivity extends Activity {
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d(TAG, "On Stop");
+
+        //mConnection.tearDown();
+
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "On Resume");
         Intent intent = getIntent();
         if (intent.getStringExtra("selected") != null)
             Connect();
@@ -134,8 +153,12 @@ public class NsdChatActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-//        mNsdHelper.tearDown();  //close all services when app closed
-//        mConnection.tearDown();
+        Log.d(TAG, "On Destroy");
+        if (mNsdHelper != null)
+            mNsdHelper.tearDown();  //close all services when app closed
+        if (mConnection != null)
+            mConnection.tearDown();
+
         super.onDestroy();
     }
 }
