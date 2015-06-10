@@ -301,8 +301,8 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
     }
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
-        final double ASPECT_TOLERANCE = 0.1;
-        double targetRatio = (double) w / h;
+        final double ASPECT_TOLERANCE = 0.2;
+        double targetRatio = (double) h / w;
 
         if (sizes == null) return null;
 
