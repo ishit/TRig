@@ -1,15 +1,17 @@
 package com.example.android.nsdchat;
 
 import android.app.Activity;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.OrientationEventListener;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -29,15 +31,19 @@ import static android.view.SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS;
 
 @SuppressWarnings("deprecation")
 public class CameraView extends Activity implements SurfaceHolder.Callback {
+
     private final String LOG_TAG = "CameraView";
     boolean mPreviewRunning;
     Camera mCamera;
     SurfaceView mSurfaceView;
     SurfaceHolder mSurfaceHolder;
     Button mCapture;
+    int lastImageRotation;
     //    public String path = Environment.getDataDirectory().getAbsolutePath() + "/storage/emulated/0/Pictures/Cam";
     Camera.PictureCallback mPictureCallback;
     private Bitmap mBitmap;
+
+    private OrientationEventListener mOrientationEventListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,11 +105,10 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
             @Override
             public void onClick(View view) {
 
-                if(mCamera.getParameters().getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO)){
+                if (mCamera.getParameters().getFocusMode().equals(Camera.Parameters.FOCUS_MODE_AUTO) && mCamera.getParameters().getFocusMode().equals(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                     new PictureTask().execute();
-                    Log.d(LOG_TAG,"No auto focus");
-                }
-                else {
+                    Log.d(LOG_TAG, "No auto focus");
+                } else {
                     mCamera.autoFocus(new Camera.AutoFocusCallback() {
                         @Override
                         public void onAutoFocus(boolean b, Camera camera) {
@@ -121,6 +126,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
                         }
                     });
+                    Log.d(LOG_TAG, "auto focus");
                     new PictureTask().execute();
                 }
             }
@@ -132,12 +138,45 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         super.onResume();
 
         mCamera = Camera.open();
-        if(mCamera!=null) {
-            mCamera.setDisplayOrientation(90);
+        if (mCamera != null) {
+            //mCamera.setDisplayOrientation(90);
             mSurfaceHolder.addCallback(this);
             mSurfaceView.setVisibility(View.VISIBLE);
+
+            mOrientationEventListener = new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
+
+                public void onOrientationChanged(int orientation) {
+
+                    if (orientation == ORIENTATION_UNKNOWN)
+                        return;
+
+                    Camera.CameraInfo info = new Camera.CameraInfo();
+                    Camera.getCameraInfo(0, info);
+
+                    orientation = (orientation + 45) / 90 * 90;
+                    int rotation;
+
+                    rotation = (info.orientation + orientation) % 360;
+
+
+                    Camera.Parameters params = mCamera.getParameters();
+                    if (lastImageRotation != rotation) {
+                        params.setRotation(rotation);
+                        mCamera.setParameters(params);
+
+                        Log.d(LOG_TAG, "onOrientationChanged");
+                        lastImageRotation = rotation;
+                    }
+                }
+
+            };
         }
+
+        if (mOrientationEventListener.canDetectOrientation())
+            mOrientationEventListener.enable();
+
     }
+
 
     @Override
     protected void onPause() {
@@ -148,6 +187,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
             mSurfaceView.setVisibility(View.GONE);
             mCamera.release();        // release the camera for other applications
             mCamera = null;
+            mOrientationEventListener.disable();
         }
     }
 
@@ -188,7 +228,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int w, int h) {
-        Log.d(LOG_TAG,"Surface Changed");
+        Log.d(LOG_TAG, "Surface Changed");
         if (mPreviewRunning) {
             mCamera.stopPreview();
         }
@@ -199,10 +239,46 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         Camera.Size mPreviewSize = getOptimalPreviewSize(previewSizes, w, h);
         parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
 
-        if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE))
+        if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        else if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FLASH_MODE_AUTO))
+            Log.d(LOG_TAG, Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+        } else if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FLASH_MODE_AUTO)) {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            Log.d(LOG_TAG, Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+        }
+
+        Camera.CameraInfo camInfo = new Camera.CameraInfo();
+        Camera.getCameraInfo(0, camInfo);
+        int cameraRotationOffset = camInfo.orientation;
+
+        int rotation = getWindowManager().getDefaultDisplay().getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                degrees = 0;
+                break; // Natural orientation
+            case Surface.ROTATION_90:
+                degrees = 90;
+                break; // Landscape left
+            case Surface.ROTATION_180:
+                degrees = 180;
+                break;// Upside down
+            case Surface.ROTATION_270:
+                degrees = 270;
+                break;// Landscape right
+        }
+        int displayRotation;
+
+
+        // back-facing
+        displayRotation = (cameraRotationOffset - degrees + 360) % 360;
+        mCamera.setDisplayOrientation(displayRotation);
+
+        Log.d(LOG_TAG, "cameraRotationOffset:" + cameraRotationOffset);
+        Log.d(LOG_TAG, "degrees:" + degrees);
+        Log.d(LOG_TAG, "displayRotation:" + displayRotation);
+
+
         mCamera.setParameters(parameters);
         try {
             mCamera.setPreviewDisplay(mSurfaceHolder);
@@ -256,19 +332,6 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         return optimalSize;
     }
 
-    //temporary method put here
-    public int getOrientation() {
-        if (getResources().getDisplayMetrics().widthPixels > getResources().getDisplayMetrics().heightPixels) {
-            Toast t = Toast.makeText(this, "LANDSCAPE", Toast.LENGTH_SHORT);
-            t.show();
-            return Configuration.ORIENTATION_LANDSCAPE;
-        }
-
-        Toast t = Toast.makeText(this, "PORTRAIT", Toast.LENGTH_SHORT);
-        t.show();
-        return Configuration.ORIENTATION_PORTRAIT;
-    }
-
 
     private class PictureTask extends AsyncTask<Void, String, Void> {
 
@@ -276,7 +339,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             mCamera.startPreview();
-        }
+    }
 
         @Override
         protected void onProgressUpdate(String... values) {
@@ -295,10 +358,10 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
                 Thread.sleep(1000);     //Captured Image Preview for 1 second
             } catch (InterruptedException ex) {
                 Log.e(LOG_TAG, "Interrupted: " + ex);
-            }
+        }
 
             return null;
-        }
+    }
     }
 
 }
