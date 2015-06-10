@@ -13,7 +13,7 @@
         android:required="true" />
 
     <uses-permission android:name="android.permission.CAMERA" />
-
+    <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature android:name="android.hardware.camera" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />

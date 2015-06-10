@@ -46,7 +46,6 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
         mSurfaceView = (SurfaceView) findViewById(R.id.surface_camera);
         mSurfaceHolder = mSurfaceView.getHolder();
-        mSurfaceHolder.addCallback(this);
         mSurfaceHolder.setType(SURFACE_TYPE_PUSH_BUFFERS);
         mPreviewRunning = false;
 
@@ -100,25 +99,30 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
             @Override
             public void onClick(View view) {
 
-                mCamera.autoFocus(new Camera.AutoFocusCallback() {
-                    @Override
-                    public void onAutoFocus(boolean b, Camera camera) {
-                        if (b == true) {
+                if(mCamera.getParameters().getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO)){
+                    new PictureTask().execute();
+                    Log.d(LOG_TAG,"No auto focus");
+                }
+                else {
+                    mCamera.autoFocus(new Camera.AutoFocusCallback() {
+                        @Override
+                        public void onAutoFocus(boolean b, Camera camera) {
+                            if (b == true) {
 //                            mCamera.takePicture(null, null, mPictureCallback);
 //                            mCamera.startPreview();
 
-                        } else {
-                            Toast.makeText(getApplicationContext(), "Not Sharp Focussed", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Not Sharp Focussed", Toast.LENGTH_SHORT).show();
+                            }
+
+                            if (mCamera.getParameters().getFocusMode() == Camera.Parameters.FOCUS_MODE_AUTO) {
+                                mCamera.cancelAutoFocus();
+                            }
+
                         }
-
-                        if (mCamera.getParameters().getFocusMode() == Camera.Parameters.FOCUS_MODE_AUTO) {
-                            mCamera.cancelAutoFocus();
-                        }
-
-                    }
-                });
-                new PictureTask().execute();
-
+                    });
+                    new PictureTask().execute();
+                }
             }
         });
     }
@@ -128,9 +132,11 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         super.onResume();
 
         mCamera = Camera.open();
-        if (getOrientation() == Configuration.ORIENTATION_PORTRAIT)
+        if(mCamera!=null) {
             mCamera.setDisplayOrientation(90);
-
+            mSurfaceHolder.addCallback(this);
+            mSurfaceView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -138,6 +144,8 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         super.onPause();
 
         if (mCamera != null) {
+            mSurfaceHolder.removeCallback(this);
+            mSurfaceView.setVisibility(View.GONE);
             mCamera.release();        // release the camera for other applications
             mCamera = null;
         }
@@ -180,6 +188,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int w, int h) {
+        Log.d(LOG_TAG,"Surface Changed");
         if (mPreviewRunning) {
             mCamera.stopPreview();
         }
