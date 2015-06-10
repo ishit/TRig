@@ -20,8 +20,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
-import java.util.Random;
 
 import static android.view.SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS;
 
@@ -57,11 +58,9 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         mPictureCallback = new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(byte[] bytes, Camera camera) {
-                Random generator = new Random();
-                int n = 1000;
-                n = generator.nextInt(n);
-
-                String fName = "Image-" + n + ".jpg";
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyymmddhhmmss");
+                String date = dateFormat.format(new Date());
+                String fName = "Image-" + date + ".jpg";
 
                 File pictureFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/", fName);
                 try {
@@ -107,16 +106,18 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
                         if (b == true) {
 //                            mCamera.takePicture(null, null, mPictureCallback);
 //                            mCamera.startPreview();
-                            new PictureTask().execute();
 
-                        } else
+                        } else {
                             Toast.makeText(getApplicationContext(), "Not Sharp Focussed", Toast.LENGTH_SHORT).show();
+                        }
 
-                        if (mCamera.getParameters().getFocusMode() == Camera.Parameters.FOCUS_MODE_AUTO)
+                        if (mCamera.getParameters().getFocusMode() == Camera.Parameters.FOCUS_MODE_AUTO) {
                             mCamera.cancelAutoFocus();
+                        }
+
                     }
                 });
-
+                new PictureTask().execute();
 
             }
         });
@@ -216,7 +217,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
         final double ASPECT_TOLERANCE = 0.1;
-        double targetRatio = (double) h / w;
+        double targetRatio = (double) w / h;
 
         if (sizes == null) return null;
 
@@ -272,7 +273,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         protected void onProgressUpdate(String... values) {
             super.onProgressUpdate(values);
 
-            Toast.makeText(getApplicationContext(), values[0], Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), values[0], Toast.LENGTH_SHORT);
 
         }
 
@@ -281,10 +282,8 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
             mCamera.takePicture(null, null, mPictureCallback);
 
-            publishProgress("Image Captured");
-
             try {
-                Thread.sleep(2000);     //Captured Image Preview for 2 seconds
+                Thread.sleep(1000);     //Captured Image Preview for 1 second
             } catch (InterruptedException ex) {
                 Log.e(LOG_TAG, "Interrupted: " + ex);
             }
