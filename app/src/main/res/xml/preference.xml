@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="Main settings">
+        <EditTextPreference
+            android:defaultValue="@string/pref_name_default"
+            android:dialogTitle="Enter your name: "
+            android:summary="NsdChat"
+            android:key="name"
+            android:title="Name" />
+    </PreferenceCategory>
+</PreferenceScreen>

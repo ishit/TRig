@@ -1,8 +1,10 @@
 package com.example.android.nsdchat;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -25,13 +27,14 @@ public class NsdHelper {
     private List<NsdServiceInfo> serviceInfoList = new ArrayList<NsdServiceInfo>();
 
     public static final String TAG = "NsdHelper";
-    public String mServiceName = "NsdChat" + new Random().nextInt(50) + 1;
-
+    public String mServiceName;
     private NsdServiceInfo mService;
 
     private NsdHelper(Context context) {
         mContext = context;
         mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
+        SharedPreferences namePref = PreferenceManager.getDefaultSharedPreferences(context);
+        mServiceName = namePref.getString("name", "NsdChat" + new Random().nextInt(50) + 1);
     }
 
     public static NsdHelper getInstance(Context context) {

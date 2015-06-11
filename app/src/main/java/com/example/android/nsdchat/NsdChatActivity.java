@@ -23,7 +23,11 @@ import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -44,9 +48,6 @@ public class NsdChatActivity extends Activity {
         return NsdChatActivity.context;
     }
 
-    /**
-     * Called when the activity is first created.
-     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,15 +65,37 @@ public class NsdChatActivity extends Activity {
         };
 
         mConnection = new ChatConnection(mUpdateHandler);
-
         mNsdHelper = NsdHelper.getInstance(this);
-//        mNsdHelper.initializeNsd();
+        PreferenceManager.setDefaultValues(this, R.xml.preference, false);
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case R.id.settings:
+                openSettings();
+                break;
+            default:
+                break;
+        }
+        return true;
+    }
+
+    private void openSettings() {
+        Intent settingsIntent = new Intent(this, UserSettingsActivity.class);
+        startActivity(settingsIntent);
+        return;
     }
 
     public void clickAdvertise(View v) {
         // Register service
-//        mConnection.startChatServer();
         if (mConnection.getLocalPort() > -1) {
             mNsdHelper.registerService(mConnection.getLocalPort());
         } else {
