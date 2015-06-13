@@ -21,7 +21,6 @@ package com.example.android.nsdchat;
 
 import android.os.SystemClock;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -39,6 +38,7 @@ import java.net.InetAddress;
  * }
  * </pre>
  */
+
 public class SntpClient {
     private static final String TAG = "SntpClient";
 
@@ -100,7 +100,13 @@ public class SntpClient {
             long responseTime = requestTime + (responseTicks - requestTicks);
 
             // extract the results
+            /**
+             * Origin Time: Time at the client when the request leaves for the server
+             * Receive Time: Time at the server when the request reaches the server
+             * Transit Time: Time at the server when the response leaves the server
+             */
             long originateTime = readTimeStamp(buffer, ORIGINATE_TIME_OFFSET);
+            Log.d(TAG, Long.toString(originateTime));
             long receiveTime = readTimeStamp(buffer, RECEIVE_TIME_OFFSET);
             long transmitTime = readTimeStamp(buffer, TRANSMIT_TIME_OFFSET);
             long roundTripTime = responseTicks - requestTicks - (transmitTime - receiveTime);
@@ -121,7 +127,6 @@ public class SntpClient {
             mNtpTime = responseTime + clockOffset;
             mNtpTimeReference = responseTicks;
             mRoundTripTime = roundTripTime;
-            Toast.makeText(NsdChatActivity.getContext(), "RTT : " + mRoundTripTime, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             if (false) Log.d(TAG, "request time failed: " + e);
             return false;
