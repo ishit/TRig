@@ -28,7 +28,6 @@ import java.util.List;
 
 import static android.view.SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS;
 
-
 @SuppressWarnings("deprecation")
 public class CameraView extends Activity implements SurfaceHolder.Callback {
 
@@ -71,23 +70,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
                 try {
                     FileOutputStream fos = new FileOutputStream(pictureFile);
                     Log.e(LOG_TAG, pictureFile.toString());
-
-//                    mBitmap= BitmapFactory.decodeByteArray(bytes,0,bytes.length);
-//                    if(mBitmap!=null){
-//                        Log.e(LOG_TAG,"Bitmap not null.");
-//                        if (mBitmap.getWidth() > mBitmap.getHeight()) {
-//                            Matrix matrix = new Matrix();
-//                            matrix.postRotate(90);
-//                            mBitmap = Bitmap.createBitmap(mBitmap , 0, 0, mBitmap.getWidth(), mBitmap.getHeight(), matrix, true);
-//
-//                            bytes=mBitmap.get
-//                        }
-//                    }
-//                    else
-//                        Log.e(LOG_TAG, "Bitmap not null.");
-
                     fos.write(bytes);
-
                     fos.flush();
                     fos.close();
                 } catch (FileNotFoundException e) {
@@ -108,26 +91,23 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
                 if (mCamera.getParameters().getFocusMode().equals(Camera.Parameters.FOCUS_MODE_AUTO) && mCamera.getParameters().getFocusMode().equals(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                     new PictureTask().execute();
                     Log.d(LOG_TAG, "No auto focus");
+                } else if (mCamera.getParameters().getFocusMode().equals(Camera.Parameters.FOCUS_MODE_INFINITY)) {
+                    new PictureTask().execute();
                 } else {
                     mCamera.autoFocus(new Camera.AutoFocusCallback() {
                         @Override
                         public void onAutoFocus(boolean b, Camera camera) {
-                            if (b == true) {
-//                            mCamera.takePicture(null, null, mPictureCallback);
-//                            mCamera.startPreview();
-
+                            if (b) {
+                                new PictureTask().execute();
                             } else {
                                 Toast.makeText(getApplicationContext(), "Not Sharp Focussed", Toast.LENGTH_SHORT).show();
                             }
-
-                            if (mCamera.getParameters().getFocusMode() == Camera.Parameters.FOCUS_MODE_AUTO) {
+                            if (mCamera.getParameters().getFocusMode().equals(Camera.Parameters.FOCUS_MODE_AUTO)) {
                                 mCamera.cancelAutoFocus();
                             }
-
                         }
                     });
                     Log.d(LOG_TAG, "auto focus");
-                    new PictureTask().execute();
                 }
             }
         });
@@ -238,10 +218,12 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
         Camera.Size mPreviewSize = getOptimalPreviewSize(previewSizes, w, h);
         parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
-
-        if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-            Log.d(LOG_TAG, Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+        parameters.setPreviewFpsRange(30000, 30000);
+        if(parameters.getAutoExposureLock())
+            parameters.setAutoExposureLock(true);
+        if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_INFINITY)) {
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
+            Log.d(LOG_TAG, Camera.Parameters.FOCUS_MODE_INFINITY);
         } else if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FLASH_MODE_AUTO)) {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
             Log.d(LOG_TAG, Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
@@ -286,7 +268,9 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
             mCamera.release();
             mCamera = null;
         }
-        mCamera.startPreview();
+        if (mCamera != null) {
+            mCamera.startPreview();
+        }
         mPreviewRunning = true;
     }
 
@@ -339,7 +323,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             mCamera.startPreview();
-    }
+        }
 
         @Override
         protected void onProgressUpdate(String... values) {
@@ -358,10 +342,10 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
                 Thread.sleep(1000);     //Captured Image Preview for 1 second
             } catch (InterruptedException ex) {
                 Log.e(LOG_TAG, "Interrupted: " + ex);
-        }
+            }
 
             return null;
-    }
+        }
     }
 
 }
