@@ -1,7 +1,6 @@
 package com.example.android.nsdchat;
 
 import android.app.Activity;
-import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
@@ -38,11 +37,11 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
     SurfaceHolder mSurfaceHolder;
     Button mCapture;
     int lastImageRotation;
-    //    public String path = Environment.getDataDirectory().getAbsolutePath() + "/storage/emulated/0/Pictures/Cam";
     Camera.PictureCallback mPictureCallback;
-    private Bitmap mBitmap;
-
+    Camera.PreviewCallback mPreviewCallback;
     private OrientationEventListener mOrientationEventListener;
+    private int mFrameNumber = 1;
+    private long start;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,6 +110,20 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
                 }
             }
         });
+        mPreviewCallback = new Camera.PreviewCallback() {
+            @Override
+            public void onPreviewFrame(byte[] data, Camera camera) {
+                if (mFrameNumber == 1) {
+                    start = System.currentTimeMillis();
+                    mFrameNumber = 2;
+                    return;
+                }
+                long now = System.currentTimeMillis();
+                float fps = new Float(now - start) / mFrameNumber;
+                Log.d(LOG_TAG, "FPS: " + Float.toString(fps));
+                mFrameNumber++;
+            }
+        };
     }
 
     @Override
@@ -219,7 +232,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         Camera.Size mPreviewSize = getOptimalPreviewSize(previewSizes, w, h);
         parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
         parameters.setPreviewFpsRange(30000, 30000);
-        if(parameters.getAutoExposureLock())
+        if (parameters.getAutoExposureLock())
             parameters.setAutoExposureLock(true);
         if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_INFINITY)) {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
@@ -262,6 +275,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
 
         mCamera.setParameters(parameters);
+        mCamera.setPreviewCallback(mPreviewCallback);
         try {
             mCamera.setPreviewDisplay(mSurfaceHolder);
         } catch (IOException e) {
