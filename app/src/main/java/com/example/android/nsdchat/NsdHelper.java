@@ -9,6 +9,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -25,6 +26,7 @@ public class NsdHelper {
     public static final String SERVICE_TYPE = "_http._tcp.";
     private List<String> servicesList = new ArrayList<String>();
     private List<NsdServiceInfo> serviceInfoList = new ArrayList<NsdServiceInfo>();
+    private HashMap<NsdServiceInfo, String> connectedServices = new HashMap<NsdServiceInfo, String>();
 
     public static final String TAG = "NsdHelper";
     public String mServiceName;
@@ -41,7 +43,6 @@ public class NsdHelper {
         if (mNsdHelper == null) {
             mNsdHelper = new NsdHelper(context);
         }
-
         return mNsdHelper;
     }
 
@@ -56,7 +57,10 @@ public class NsdHelper {
 
     public void setChosenServiceInfo(NsdServiceInfo service) {
         mNsdManager.resolveService(service, mResolveListener);
-        return;
+    }
+
+    public HashMap<NsdServiceInfo, String> getConnectedServices() {
+        return connectedServices;
     }
 
     public void initializeDiscoveryListener() {
@@ -81,7 +85,6 @@ public class NsdHelper {
                     Log.d(TAG, "Unknown Service Type: " + service.getServiceType());
                 } else if (service.getServiceName().equals(mServiceName)) {
                     Log.d(TAG, "Same machine: " + mServiceName);
-                } else if (service.getServiceName().contains("NsdChat")) {
                 }
             }
 
@@ -122,6 +125,7 @@ public class NsdHelper {
             @Override
             public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
                 Log.e(TAG, "Resolve failed" + errorCode);
+                Toast.makeText(mContext, "Unable to connect.", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -132,6 +136,7 @@ public class NsdHelper {
                     Log.d(TAG, "Same IP.");
 //                    return;
                 }
+                connectedServices.put(serviceInfo, "connecting");
                 mService = serviceInfo;
             }
         };
@@ -163,8 +168,6 @@ public class NsdHelper {
             }
 
         };
-
-
     }
 
     public void registerService(int port) {
@@ -212,7 +215,5 @@ public class NsdHelper {
         if (mRegistrationListener != null)
             mNsdManager.unregisterService(mRegistrationListener);
         mRegistrationListener = null;
-
-
     }
 }

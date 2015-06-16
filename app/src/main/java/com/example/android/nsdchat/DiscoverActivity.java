@@ -5,6 +5,7 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
+import android.content.Context;
 import android.content.Intent;
 import android.net.nsd.NsdServiceInfo;
 import android.os.AsyncTask;
@@ -17,12 +18,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
 
 public class DiscoverActivity extends Activity {
 
@@ -37,8 +39,6 @@ public class DiscoverActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_discover);
-
-
         /**
          * Initialize Tabs
          * */
@@ -77,7 +77,7 @@ public class DiscoverActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class RefreshList extends AsyncTask<Void, Void, List<String>> {
+    private class RefreshDiscoveredList extends AsyncTask<Void, Void, List<String>> {
 
         @Override
         protected List<String> doInBackground(Void... voids) {
@@ -112,7 +112,7 @@ public class DiscoverActivity extends Activity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             getActionBar().setTitle("Discover");
             View view = inflater.inflate(R.layout.tab_discover, container, false);
-            new RefreshList().execute();
+            new RefreshDiscoveredList().execute();
 
             services = new ArrayList<String>();
             servicesAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, services);
@@ -127,7 +127,7 @@ public class DiscoverActivity extends Activity {
                     String selectedItem = (String) serviceList.getItemAtPosition(position);
                     NsdHelper mNsdHelper = NsdHelper.getInstance(getApplicationContext());
                     for (NsdServiceInfo service : mNsdHelper.getServiceInfoList()) {
-                        if (service.getServiceName() == selectedItem) {
+                        if (service.getServiceName().equals(selectedItem)) {
                             mNsdHelper.setChosenServiceInfo(service);
                             break;
                         }
@@ -148,9 +148,79 @@ public class DiscoverActivity extends Activity {
                                  Bundle savedInstanceState) {
             getActionBar().setTitle("Connected");
             View view = inflater.inflate(R.layout.tab_connected, container, false);
-            TextView textview = (TextView) view.findViewById(R.id.tabtextview);
-            textview.setText("Connected devices go here.");
+            HashMap<NsdServiceInfo, String> connectedList = (HashMap<NsdServiceInfo, String>) NsdHelper.getInstance(getActivity()).getConnectedServices();
+            BaseAdapter connectedAdapter = new ConnectedAdapter(connectedList);
+            ListView listview = (ListView) view.findViewById(R.id.connected_list);
+            listview.setAdapter(connectedAdapter);
             return view;
+        }
+
+        public class ConnectedAdapter extends BaseAdapter {
+
+            private HashMap<NsdServiceInfo, String> connectedList;
+            private ArrayList<String> serviceNames = new ArrayList<String>();
+
+            public ConnectedAdapter(HashMap<NsdServiceInfo, String> connectedList) {
+                this.connectedList = connectedList;
+                for (NsdServiceInfo service :
+                        connectedList.keySet()) {
+                    serviceNames.add(service.getServiceName());
+                }
+            }
+
+            @Override
+            public int getCount() {
+                return connectedList.size();
+            }
+
+            @Override
+            public Object getItem(int i) {
+                return null;
+            }
+
+            @Override
+            public long getItemId(int i) {
+                String item = serviceNames.get(i);
+                return 0;
+            }
+
+            @Override
+            public View getView(int arg0, View arg1, ViewGroup arg2) {
+                if (arg1 == null) {
+                    LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    arg1 = inflater.inflate(R.layout.connected_list_items, arg2, false);
+                }
+
+                TextView serviceName = (TextView) arg1.findViewById(R.id.firstLine);
+                TextView serviceStatus = (TextView) arg1.findViewById(R.id.secondLine);
+
+                String service = serviceNames.get(arg0);
+                serviceName.setText(service);
+
+                String status = null;
+                for (NsdServiceInfo serviceInfo :
+                        connectedList.keySet()) {
+                    if (service.equals(serviceInfo.getServiceName())) {
+                        status = connectedList.get(serviceInfo);
+                        break;
+                    }
+
+                }
+
+                String secondLine = null;
+
+                if (status.equals("connecting")) {
+                    secondLine = "Connecting..";
+
+                } else {
+                    secondLine = "";
+
+                }
+
+                serviceStatus.setText(secondLine);
+                Log.d(LOG_TAG, "Status " + status);
+                return arg1;
+            }
         }
     }
 
