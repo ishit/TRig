@@ -1,17 +1,24 @@
 package com.example.android.nsdchat;
 
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.net.nsd.NsdServiceInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,42 +26,33 @@ import java.util.List;
 
 public class DiscoverActivity extends Activity {
 
-    private ArrayAdapter<String> servicesAdapter;
+    public ArrayAdapter<String> servicesAdapter;
     private final String LOG_TAG = "DiscoverActivity";
-    private List<String> services;
+    public List<String> services;
+    ActionBar.Tab discoverTab, connectedTab;
+    Fragment discoverFragment = new DiscoverFragment();
+    Fragment connectedFragment = new ConnectedFragment();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_discover);
 
-        new RefreshList().execute();
 
-        services = new ArrayList<String>();
-        servicesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, services);
-        final ListView serviceList = (ListView) findViewById(R.id.serviceList);
-        serviceList.setAdapter(servicesAdapter);
+        /**
+         * Initialize Tabs
+         * */
+        ActionBar actionbar = getActionBar();
+        actionbar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
-        //Item listener
-        serviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        discoverTab = actionbar.newTab().setText("Discover");
+        connectedTab = actionbar.newTab().setText("Connected");
 
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                String selectedItem = (String) serviceList.getItemAtPosition(position);
-                NsdHelper mNsdHelper = NsdHelper.getInstance(getApplicationContext());
-                for (NsdServiceInfo service : mNsdHelper.getServiceInfoList()) {
-                    if (service.getServiceName() == selectedItem) {
-                        mNsdHelper.setChosenServiceInfo(service);
-                        break;
-                    }
-                }
-                Log.d(LOG_TAG, "Resolved Service: " + mNsdHelper.getChosenServiceInfo());
-                Intent intent = new Intent(DiscoverActivity.this, NsdChatActivity.class);
-                intent.putExtra("selected", selectedItem);
-                startActivity(intent);
-            }
-        });
+        discoverTab.setTabListener(new DiscoverTabListener(discoverFragment));
+        connectedTab.setTabListener(new DiscoverTabListener(connectedFragment));
 
+        actionbar.addTab(discoverTab);
+        actionbar.addTab(connectedTab);
     }
 
     @Override
@@ -104,4 +102,78 @@ public class DiscoverActivity extends Activity {
         }
     }
 
+    @SuppressLint("ValidFragment")
+    public class DiscoverFragment extends Fragment {
+
+        public void onAttach(Activity activity) {
+            super.onAttach(activity);
+        }
+
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            getActionBar().setTitle("Discover");
+            View view = inflater.inflate(R.layout.tab_discover, container, false);
+            new RefreshList().execute();
+
+            services = new ArrayList<String>();
+            servicesAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1, services);
+            final ListView serviceList = (ListView) view.findViewById(R.id.serviceList);
+            serviceList.setAdapter(servicesAdapter);
+
+            //Item listener
+            serviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                    String selectedItem = (String) serviceList.getItemAtPosition(position);
+                    NsdHelper mNsdHelper = NsdHelper.getInstance(getApplicationContext());
+                    for (NsdServiceInfo service : mNsdHelper.getServiceInfoList()) {
+                        if (service.getServiceName() == selectedItem) {
+                            mNsdHelper.setChosenServiceInfo(service);
+                            break;
+                        }
+                    }
+                    Log.d(LOG_TAG, "Resolved Service: " + mNsdHelper.getChosenServiceInfo());
+                    Intent intent = new Intent(DiscoverActivity.this, NsdChatActivity.class);
+                    intent.putExtra("selected", selectedItem);
+                    startActivity(intent);
+                }
+            });
+            return view;
+        }
+    }
+
+    @SuppressLint("ValidFragment")
+    public class ConnectedFragment extends Fragment {
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            getActionBar().setTitle("Connected");
+            View view = inflater.inflate(R.layout.tab_connected, container, false);
+            TextView textview = (TextView) view.findViewById(R.id.tabtextview);
+            textview.setText("Connected devices go here.");
+            return view;
+        }
+    }
+
+    public class DiscoverTabListener implements ActionBar.TabListener {
+        Fragment fragment;
+
+        public DiscoverTabListener(Fragment fragment) {
+            this.fragment = fragment;
+        }
+
+        @Override
+        public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
+            fragmentTransaction.replace(R.id.activity_discover, fragment);
+        }
+
+        @Override
+        public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
+            fragmentTransaction.remove(fragment);
+        }
+
+        @Override
+        public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
+
+        }
+    }
 }
