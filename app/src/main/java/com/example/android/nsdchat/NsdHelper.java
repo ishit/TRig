@@ -178,7 +178,7 @@ public class NsdHelper {
 
         //unregister the old registered service before initiating new one.
         if (mRegistrationListener != null)
-            tearDown();
+            unregisterCurrentService();
 
         initializeRegistrationListener();
 
@@ -207,6 +207,13 @@ public class NsdHelper {
 
     public NsdServiceInfo getChosenServiceInfo() {
         return mService;
+    }
+
+    public void unregisterCurrentService() {
+        if (mRegistrationListener != null) {
+            mNsdManager.unregisterService(mRegistrationListener);
+            Log.d(TAG, "Unregistered service.");
+        }
     }
 
     public void tearDown() {

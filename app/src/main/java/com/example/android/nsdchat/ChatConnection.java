@@ -81,15 +81,16 @@ public class ChatConnection {
         } else
             Log.e(TAG, "Chat Client not initialised");
     }
-    
+
+
     public int getLocalPort() {
         return mPort;
     }
-    
+
     public void setLocalPort(int port) {
         mPort = port;
     }
-    
+
 
     public synchronized void updateMessages(String msg, boolean local) {
         Log.e(TAG, "Updating message: " + msg);
@@ -163,7 +164,7 @@ public class ChatConnection {
                     // used.  Just grab an available one  and advertised it via Nsd.
                     mServerSocket = new ServerSocket(0);
                     setLocalPort(mServerSocket.getLocalPort());
-                    
+
                     while (!Thread.currentThread().isInterrupted()) {
                         Log.d(TAG, "ServerSocket Created, awaiting connection");
                         Socket socket = mServerSocket.accept();
@@ -233,6 +234,7 @@ public class ChatConnection {
                         String messageStr;
                         messageStr = input.readLine();
                         if (messageStr != null) {
+                            new ShowTime().execute();
                             Log.d(TAG, "Read from the stream: " + messageStr + " -- " + getSocket().toString());
                             updateMessages(messageStr, false);
                         }
@@ -296,7 +298,6 @@ public class ChatConnection {
         }
 
 
-
         public void tearDown() {
             mSendThread.interrupt();
             mRecThread.interrupt();
@@ -321,6 +322,7 @@ public class ChatConnection {
                 } else {
                     out.println(msg);
                     out.flush();
+                    new ShowTime().execute();
                     updateMessages(msg, true);
                     Log.d(CLIENT_TAG, "Sent message: " + msg);
                 }

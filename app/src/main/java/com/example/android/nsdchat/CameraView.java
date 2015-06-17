@@ -119,7 +119,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
                     return;
                 }
                 long now = System.currentTimeMillis();
-                float fps = new Float(now - start) / mFrameNumber;
+                float fps = (float) (now - start) / mFrameNumber;
                 Log.d(LOG_TAG, "FPS: " + Float.toString(fps));
                 mFrameNumber++;
             }
@@ -173,15 +173,15 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
 
     @Override
     protected void onPause() {
-        super.onPause();
-
         if (mCamera != null) {
+            mCamera.stopPreview();
             mSurfaceHolder.removeCallback(this);
             mSurfaceView.setVisibility(View.GONE);
             mCamera.release();        // release the camera for other applications
             mCamera = null;
             mOrientationEventListener.disable();
         }
+        super.onPause();
     }
 
     @Override

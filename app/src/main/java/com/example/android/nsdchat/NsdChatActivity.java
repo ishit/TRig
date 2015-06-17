@@ -67,6 +67,10 @@ public class NsdChatActivity extends Activity {
         mConnection = new ChatConnection(mUpdateHandler);
         mNsdHelper = NsdHelper.getInstance(this);
         PreferenceManager.setDefaultValues(this, R.xml.preference, false);
+
+        if (mConnection.getLocalPort() > -1) {
+            mNsdHelper.registerService(mConnection.getLocalPort());
+        }
     }
 
     @Override
@@ -109,6 +113,12 @@ public class NsdChatActivity extends Activity {
         startActivity(intent);
 
     }
+    
+
+    public void clickCamera(View v) {
+        Intent intent = new Intent(this, CameraView.class);
+        startActivity(intent);
+    }
 
     public void Connect() {
         NsdServiceInfo service = mNsdHelper.getChosenServiceInfo();
@@ -140,8 +150,6 @@ public class NsdChatActivity extends Activity {
                 mStatusView.append("\n" + line);
             }
         });
-
-
     }
 
     @Override
@@ -181,7 +189,7 @@ public class NsdChatActivity extends Activity {
             mNsdHelper.tearDown();  //close all services when app closed
         if (mConnection != null)
             mConnection.tearDown();
-
         super.onDestroy();
     }
 }
+

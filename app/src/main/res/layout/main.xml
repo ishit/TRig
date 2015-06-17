@@ -24,6 +24,13 @@
             android:onClick="clickDiscover"
             android:text="@string/discover" />
 
+        <Button
+            android:id="@+id/camera_btn"
+            android:layout_width="96dp"
+            android:layout_height="64dp"
+            android:onClick="clickCamera"
+            android:text="Camera" />
+
         <!--<Button-->
         <!--android:id="@+id/connect_btn"-->
         <!--android:layout_width="96dp"-->
