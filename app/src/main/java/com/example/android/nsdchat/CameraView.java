@@ -177,6 +177,7 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
             mCamera.stopPreview();
             mSurfaceHolder.removeCallback(this);
             mSurfaceView.setVisibility(View.GONE);
+            mCamera.setPreviewCallback(null);
             mCamera.release();        // release the camera for other applications
             mCamera = null;
             mOrientationEventListener.disable();

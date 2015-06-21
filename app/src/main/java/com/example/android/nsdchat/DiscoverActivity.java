@@ -134,7 +134,7 @@ public class DiscoverActivity extends Activity {
                     }
                     Log.d(LOG_TAG, "Resolved Service: " + mNsdHelper.getChosenServiceInfo());
                     Intent intent = new Intent(DiscoverActivity.this, NsdChatActivity.class);
-                    intent.putExtra("selected", selectedItem);
+                    intent.putExtra("selected", 1);
                     startActivity(intent);
                 }
             });
