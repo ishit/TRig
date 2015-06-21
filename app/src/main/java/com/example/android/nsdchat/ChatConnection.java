@@ -1,24 +1,11 @@
-/*
- * Copyright (C) 2012 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.example.android.nsdchat;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -39,6 +26,7 @@ public class ChatConnection {
     private Handler mUpdateHandler;
     private ChatServer mChatServer;
     private ChatClient mChatClient;
+    private Context mContext;
 
     private static final String TAG = "ChatConnection";
 
@@ -46,9 +34,11 @@ public class ChatConnection {
     private int mPort = -1;
     //private Thread mRecThread;
 
-    public ChatConnection(Handler handler) {
+    public ChatConnection(Context context, Handler handler) {
         mUpdateHandler = handler;
         mChatServer = new ChatServer(handler);
+        mSocket = null;
+        mContext = context;
     }
 
 //    public void startChatServer(){
@@ -107,7 +97,9 @@ public class ChatConnection {
         Message message = new Message();
         message.setData(messageBundle);
         mUpdateHandler.sendMessage(message);
-
+        Intent intent = new Intent("camera-message");
+        intent.putExtra("message", msg);
+        LocalBroadcastManager.getInstance(mContext).sendBroadcast(intent);
     }
 
     private synchronized void setSocket(Socket socket) {
@@ -136,6 +128,7 @@ public class ChatConnection {
     private class ChatServer {
         ServerSocket mServerSocket = null;
         Thread mThread = null;
+        public static final int SERVER_PORT = 6000;
 
         public ChatServer(Handler handler) {
             mThread = new Thread(new ServerThread());
@@ -164,19 +157,19 @@ public class ChatConnection {
                     // used.  Just grab an available one  and advertised it via Nsd.
                     mServerSocket = new ServerSocket(0);
                     setLocalPort(mServerSocket.getLocalPort());
-
                     while (!Thread.currentThread().isInterrupted()) {
                         Log.d(TAG, "ServerSocket Created, awaiting connection");
-                        Socket socket = mServerSocket.accept();
-                        Log.d(TAG, "ServerSocket accepted client");
-                        setSocket(socket);
-                        Log.d(TAG, "Connected.");
-//                        Toast toast = Toast.makeText(null, "Connected!", Toast.LENGTH_SHORT);
-//                        toast.show();
-
-
-                        connectToServer(socket.getInetAddress(), socket.getPort());
-
+                        try {
+                            Socket socket = mServerSocket.accept();
+                            Log.d(TAG, "ServerSocket accepted client");
+                            if (socket != null) {
+                                setSocket(socket);
+                                connectToServer(socket.getInetAddress(), socket.getPort());
+                            }
+                            Log.d(TAG, "Connected.");
+                        } catch (Exception e) {
+                            Log.e(TAG, "Cannot accept server socket. Socket closed.");
+                        }
                     }
                 } catch (IOException e) {
                     Log.e(TAG, "Error creating ServerSocket: ", e);
@@ -230,7 +223,6 @@ public class ChatConnection {
                     input = new BufferedReader(new InputStreamReader(
                             getSocket().getInputStream()));
                     while (!Thread.currentThread().isInterrupted()) {
-
                         String messageStr;
                         messageStr = input.readLine();
                         if (messageStr != null) {
@@ -243,12 +235,9 @@ public class ChatConnection {
 //                            break;
 //                        }
                     }
-
-
                 } catch (IOException e) {
                     Log.e(TAG, "error: ", e);
                 }
-
             }
         }
 
@@ -260,7 +249,6 @@ public class ChatConnection {
             public SendingThread() {
                 mMessageQueue = new ArrayBlockingQueue<String>(QUEUE_CAPACITY);
             }
-
 
             @Override
             public void run() {
@@ -303,8 +291,10 @@ public class ChatConnection {
             mRecThread.interrupt();
             Log.d(CLIENT_TAG, "Closing client socket.");
             try {
-                input.close();
-                out.close();
+                if (input != null)
+                    input.close();
+                if (out != null)
+                    out.close();
                 if (getSocket() != null)
                     getSocket().close();
             } catch (IOException ioe) {
@@ -337,6 +327,4 @@ public class ChatConnection {
 
         }
     }
-
-
 }

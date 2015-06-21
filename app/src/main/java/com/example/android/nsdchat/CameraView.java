@@ -1,11 +1,16 @@
 package com.example.android.nsdchat;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -124,6 +129,8 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
                 mFrameNumber++;
             }
         };
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter("camera-message"));
     }
 
     @Override
@@ -185,6 +192,11 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         super.onPause();
     }
 
+    @Override
+    protected void onDestroy(){
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+        super.onDestroy();
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -331,6 +343,14 @@ public class CameraView extends Activity implements SurfaceHolder.Callback {
         return optimalSize;
     }
 
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String message = intent.getStringExtra("message");
+            Log.d(LOG_TAG, "Received message: " + message);
+        }
+    };
 
     private class PictureTask extends AsyncTask<Void, String, Void> {
 

@@ -48,7 +48,7 @@ public class NsdChatActivity extends Activity {
             }
         };
 
-        mConnection = new ChatConnection(mUpdateHandler);
+        mConnection = new ChatConnection(this, mUpdateHandler);
         mNsdHelper = NsdHelper.getInstance(this);
         PreferenceManager.setDefaultValues(this, R.xml.preference, false);
 
@@ -61,6 +61,7 @@ public class NsdChatActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
+        getActionBar().setTitle("TRig");
         return true;
     }
 
