@@ -101,7 +101,7 @@ public class NsdChatActivity extends Activity {
     
 
     public void clickCamera(View v) {
-        Intent intent = new Intent(this, CameraView.class);
+        Intent intent = new Intent(this, Camera2.class);
         startActivity(intent);
     }
 
